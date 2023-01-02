@@ -1,20 +1,19 @@
 -- SERVICES
 local ServerScriptService 				= game:GetService("ServerScriptService")
-local ServerStorage 					= game:GetService("ServerStorage")
 local ReplicatedStorage 				= game:GetService("ReplicatedStorage")
 local DataStoreService					= game:GetService("DataStoreService")
 local Players 							= game:GetService("Players")
-local Teams 							= game:GetService("Teams")
 
 --- MODULE SCRIPTS
 local Timer 							= require(ServerScriptService.Classes.Timer)
 local Game 								= require(ServerScriptService.Classes.Game)
+local RankingSystem						= require(ServerScriptService.Classes.RankingSystem)
 
 -- EVENTS / VALUES
-local InRound 							= ReplicatedStorage.Events.InRound
-local InIntermission					= ReplicatedStorage.Events.InIntermission
-local Status 							= ReplicatedStorage.Events.Status
-local DisplayStatus 					= ReplicatedStorage.Events.DisplayStatus
+local InRound 							= ReplicatedStorage.Values.InRound
+local InIntermission					= ReplicatedStorage.Values.InIntermission
+local Status 							= ReplicatedStorage.Values.Status
+local DisplayStatus 					= ReplicatedStorage.Values.DisplayStatus
 
 -- LEADER BOARD
 local LeaderstatsDataStore = DataStoreService:GetDataStore("LeaderstatsDataStore")
@@ -25,38 +24,27 @@ game.Players.PlayerAdded:Connect(function(player)
 
 	local Points = Instance.new("IntValue", leaderstats)
 	Points.Name = "Points"
-	Points.Value = 0 -- Starting amount
+	Points.Value = 14 -- Starting amount
 	
 	local Rank = Instance.new("StringValue", leaderstats)
 	Rank.Name = "Rank"
 	Rank.Value = "X" -- Roman Numeral for '10'
+
+	local dataSave
+	local success, error = pcall(function()
+		dataSave = LeaderstatsDataStore.GetAsync(player.UserId)
+	end)
+
+	if success then
+		print("Player has data")
+		for i, data in pairs(leaderstats.GetChildren()) do
+			data.Value = dataSave[i]
+		end
+	
+	else
+		print("Error when retrieving data")
+	end
 end)
-
--- !TO DO!
--- Create Saving Data and loading data
-
-
--- CREATING TEAMS
-local LobbyTeam = Instance.new("Team")
-LobbyTeam.Parent = Teams
-LobbyTeam.Name = "Lobby"
-
-local PlayingTeam = Instance.new("Team")
-PlayingTeam.Parent = Teams
-PlayingTeam.Name = "Playing"
-
-
-
---[[!! DELETE LATER!!
-
-Booleans to indicate status of players -- !!CHANGE VALUES!!
-local isInRound = nil -- is Player participating in round
-local isDead = nil -- has the player died in the round
-
-If player is in round, if they have fallen (died), then set isDead to true and switch their teams back to lobby
-Start of round, make player isInRound true and change their team to "PlayingTeam"
-]]
-
 ----[[ START OF GAME SCRIPT ]]-----
 
 --Have a loop continue while there are more than 5 players in the game
@@ -65,9 +53,11 @@ Start of round, make player isInRound true and change their team to "PlayingTeam
 
 while not InRound.Value and not InIntermission.Value do -- While Round has not started
 	-- Checking if theres enough players in server
-	PlayerCount =  #game.Players:GetPlayers()
+	local PlayerCount =  #game.Players:GetPlayers()
+	local PLAYERSNEEDED = 1
+	local playersInRound = {} --track players alive
 
-	if (PlayerCount >= 1) then
+	if PlayerCount >= PLAYERSNEEDED then
 		-- Server has enough players to start
 		if InIntermission.Value == false and InRound.Value == false then
 			InIntermission.Value = true
@@ -78,25 +68,11 @@ while not InRound.Value and not InIntermission.Value do -- While Round has not s
 			InRound.Value = true
 			InIntermission.Value = false
 
-			-- Put all players in PlayingTeam
-			for i, v in pairs(Players:GetChildren()) do
-				if v:IsA("Player") then
-					v.Team = game.Teams.Playing
-					print("Switched teams to Playing")
-				end
-			end
-
 			Game:Start()
 			Game:CreateGameArea()
 			Game:PrepareRound()
 			Timer:roundTimer() -- Start Timer
 			
-			
-			-- !! NOT DONE!!
-			local playersInRound = {} --track players alive
-			local firstPlace
-			local secondPlace
-			local thirdPlace
 			local temp = {} -- Temporary store a target name
 			for _, Player in pairs(Players:GetChildren()) do
 				if Player.Character and Player.Character:FindFirstChild("Humanoid") then
@@ -106,20 +82,44 @@ while not InRound.Value and not InIntermission.Value do -- While Round has not s
 					end)
 				end
 			end
-			-- !! NOT DONE!!
 			
+			temp["Removing"] = game.Players.PlayerRemoving:Connect(function(player)
+				local ind = table.find(playersInRound, player)
+				if ind then
+					table.remove(playersInRound, ind)
+				end
+			end)
+
+
+			-- DETERMINE WINNERS --
+			if #playersInRound == 1 then
+				local success, error = pcall(function()
+				local playerWon = playersInRound[1]
+				DisplayStatus.Value =  playerWon.Name.." is the Winner!"
+				Status.Value = " "
+
+				playerWon.leaderstats.Points.Value += math.random(10,15) -- Earn between 10-15 points
+				RankingSystem:ChangePlayerRank(playerWon)
+				wait(3)
+				end)
+				if not success then
+					warn("Error when rewarding winner: ".. error)
+				end
+			elseif #playersInRound == 0 then
+				print("There is no single winner")
+				DisplayStatus.Value = "There is no winner this round"
+				wait(3)
+			end
 
 		end
+
 		if InRound.Value == true and Status.Value == 0 and InIntermission.Value == false then -- End of the Round
 			InRound.Value = false
 			InIntermission.Value = true
 
-			-- Put all players in Playing Team
-			for i, v in pairs(Players:GetChildren()) do
+			for _, v in pairs(playersInRound) do
 				if v:IsA("Player") then
 					v:LoadCharacter() -- Respawn Player
-					v.Team = game.Teams.Lobby
-					print("Switched teams to Lobby")
 				end
 			end
 
@@ -127,9 +127,9 @@ while not InRound.Value and not InIntermission.Value do -- While Round has not s
 			InIntermission.Value = false
 		end	
 	else
+		warn("Not Enough Players")
 		-- Not Enough Players
 	end
 	wait()
 end
-
 

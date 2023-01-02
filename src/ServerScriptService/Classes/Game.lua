@@ -58,7 +58,19 @@ end
 
 --Start Game Timer
 function Game:PrepareRound()
+	for _,v in ipairs(game.Players:GetPlayers()) do
+		
+		if v.Character then
+			v.Character.Humanoid.WalkSpeed = 0
+		end
+	end
 	wait(2)
+	for _,v in ipairs(game.Players:GetPlayers()) do
+		
+		if v.Character then
+			v.Character.Humanoid.WalkSpeed = 16
+		end
+	end
 	local TemporaryBlock = game.Workspace:FindFirstChild("ClonedGameArea").TemporaryBlock
 	TemporaryBlock:Destroy()
 

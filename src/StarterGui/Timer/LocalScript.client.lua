@@ -1,5 +1,5 @@
-local Status = game.ReplicatedStorage.Events.Status
-local DisplayStatus = game.ReplicatedStorage.Events.DisplayStatus
+local Status = game.ReplicatedStorage.Values.Status
+local DisplayStatus = game.ReplicatedStorage.Values.DisplayStatus
 local TimeDisplay = script.Parent.Frame.Frame.TimeDisplay
 local HeaderText = script.Parent.Frame.Frame.HeaderText
 

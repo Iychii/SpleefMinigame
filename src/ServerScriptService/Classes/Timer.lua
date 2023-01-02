@@ -5,11 +5,11 @@ local ReplicatedStorage					= game:GetService("ReplicatedStorage")
 local roundLength = 10 -- Round is 60 seconds
 local intermissionLength = 5 -- Intermission is 15 seconds
 
--- EVENTS / VALUES
-local InRound							= ReplicatedStorage.Events.InRound
-local InIntermission					= ReplicatedStorage.Events.InIntermission
-local Status 							= ReplicatedStorage.Events.Status
-local DisplayStatus 					= ReplicatedStorage.Events.DisplayStatus
+-- Values / VALUES
+local InRound							= ReplicatedStorage.Values.InRound
+local InIntermission					= ReplicatedStorage.Values.InIntermission
+local Status 							= ReplicatedStorage.Values.Status
+local DisplayStatus 					= ReplicatedStorage.Values.DisplayStatus
 
 
 local Timer = {}

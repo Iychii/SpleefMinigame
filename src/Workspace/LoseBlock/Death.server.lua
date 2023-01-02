@@ -1,5 +1,3 @@
-local ServerStorage = game:GetService("ServerStorage")
-
 local LoseBlock = script.Parent
 
 
