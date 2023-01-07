@@ -1,7 +1,6 @@
 -- SERVICES
 local ServerScriptService 				= game:GetService("ServerScriptService")
 local ReplicatedStorage 				= game:GetService("ReplicatedStorage")
-local DataStoreService					= game:GetService("DataStoreService")
 local Players 							= game:GetService("Players")
 
 --- MODULE SCRIPTS
@@ -15,36 +14,6 @@ local InIntermission					= ReplicatedStorage.Values.InIntermission
 local Status 							= ReplicatedStorage.Values.Status
 local DisplayStatus 					= ReplicatedStorage.Values.DisplayStatus
 
--- LEADER BOARD
-local LeaderstatsDataStore = DataStoreService:GetDataStore("LeaderstatsDataStore")
-
-game.Players.PlayerAdded:Connect(function(player)
-	local leaderstats = Instance.new("Folder", player)
-	leaderstats.Name = "leaderstats"
-
-	local Points = Instance.new("IntValue", leaderstats)
-	Points.Name = "Points"
-	Points.Value = 14 -- Starting amount
-	
-	local Rank = Instance.new("StringValue", leaderstats)
-	Rank.Name = "Rank"
-	Rank.Value = "X" -- Roman Numeral for '10'
-
-	local dataSave
-	local success, error = pcall(function()
-		dataSave = LeaderstatsDataStore.GetAsync(player.UserId)
-	end)
-
-	if success then
-		print("Player has data")
-		for i, data in pairs(leaderstats.GetChildren()) do
-			data.Value = dataSave[i]
-		end
-	
-	else
-		print("Error when retrieving data")
-	end
-end)
 ----[[ START OF GAME SCRIPT ]]-----
 
 --Have a loop continue while there are more than 5 players in the game
@@ -73,6 +42,7 @@ while not InRound.Value and not InIntermission.Value do -- While Round has not s
 			Game:PrepareRound()
 			Timer:roundTimer() -- Start Timer
 			
+			-- PROMPT KEEPING TRACK OF PLAYERs IN THE ROUND AND EDIT TABLE TO DETERMINE SURVIVING PLAYERS
 			local temp = {} -- Temporary store a target name
 			for _, Player in pairs(Players:GetChildren()) do
 				if Player.Character and Player.Character:FindFirstChild("Humanoid") then
